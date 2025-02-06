@@ -18,12 +18,12 @@ const (
 
 type HistoryEntry struct {
 	gorm.Model
-	Timestamp    string     `gorm:"type:timestamp" json:"timestamp"`
 	User         *User      `json:"user"`
 	UserId       string     `gorm:"foreignKey:UserId" json:"userId"`
 	Action       CRUDAction `json:"action"`
 	ResourceName string     `json:"resourceName"`
 	ResourceId   string     `json:"resourceId"`
+	Timestamp    string     `gorm:"type:timestamp" json:"timestamp"`
 	Detail       string     `json:"detail"`
 }
 
@@ -54,11 +54,11 @@ func NewLogHistoryEntry(action CRUDAction, userId string, object interface{}) (*
 	detail := string(jsonData)
 
 	historyEntry := &HistoryEntry{
-		Timestamp:    time.Now().Format(time.RFC3339),
 		Action:       action,
 		UserId:       userId,
 		ResourceId:   resourceId,
 		ResourceName: name,
+		Timestamp:    time.Now().Format(time.RFC3339),
 		Detail:       detail,
 	}
 

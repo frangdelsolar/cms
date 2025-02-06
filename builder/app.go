@@ -405,10 +405,7 @@ func (a *App) PluralName() string {
 func (a *App) RegisterValidator(fieldName FieldName, validators ValidatorsList) error {
 	fieldNameLower := strings.ToLower(string(fieldName))
 
-	jsonData, err := JsonifyInterface(a.Model)
-	if err != nil {
-		return err
-	}
+	jsonData := JsonifyInterface(a.Model)
 
 	// Check if the field exists in the model's JSON representation
 	fieldExists := false
@@ -467,11 +464,7 @@ func (a *App) Validate(instance interface{}) ValidationResult {
 		Errors: make([]ValidationError, 0),
 	}
 
-	jsonData, err := JsonifyInterface(instance)
-	if err != nil {
-		log.Error().Err(err).Msg("Error converting instance to JSON")
-		return errors
-	}
+	jsonData := JsonifyInterface(instance)
 
 	for key := range jsonData {
 		validators := a.GetValidatorsForField(FieldName(key))
@@ -492,19 +485,51 @@ func (a *App) Validate(instance interface{}) ValidationResult {
 	return errors
 }
 
-// JsonifyInterface takes an interface{} and attempts to convert it to a map[string]interface{}
-// via JSON marshaling and unmarshaling. If the conversion fails, it returns an error.
-func JsonifyInterface(instance interface{}) (map[string]interface{}, error) {
-	jsonData, err := json.Marshal(instance)
-	if err != nil {
-		return nil, err
+// JsonifyInterface takes an interface and returns a map of strings to interfaces.
+//
+// The returned map contains the field names of the interface as keys and the
+// corresponding values as values. If a field is of type struct, it is recursively
+// converted to a map.
+//
+// The json tags of the struct are respected, so if a field is tagged with `json:"-"`,
+// it is ignored. If a field is tagged with `json:"name,omitempty"`, the name is
+// used as the key in the map, but if the value is empty, it is not included in the
+// returned map.
+func JsonifyInterface(item interface{}) map[string]interface{} {
+
+	res := map[string]interface{}{}
+	v := reflect.TypeOf(item)
+
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
 	}
-	var data map[string]interface{}
-	err = json.Unmarshal(jsonData, &data)
-	if err != nil {
-		return nil, err
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+
+		tag := field.Tag.Get("json")
+		if tag == "-" {
+			continue
+		}
+		if strings.HasSuffix(tag, "omitempty") {
+			idx := strings.Index(tag, ",")
+			if idx > 0 {
+				tag = tag[:idx]
+			}
+		}
+
+		fieldName := strings.ToLower(field.Name)
+		if tag != "" {
+			fieldName = tag
+		}
+
+		if field.Type.Kind() == reflect.Struct {
+			res[fieldName] = JsonifyInterface(field)
+		} else {
+			res[fieldName] = ""
+		}
 	}
-	return data, nil
+
+	return res
 }
 
 /*

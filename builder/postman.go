@@ -619,10 +619,7 @@ func GetAppPath(app *App) []string {
 
 func GetBody(app *App) string {
 
-	data, err := JsonifyInterface(app.Model)
-	if err != nil {
-		return ""
-	}
+	data := JsonifyInterface(app.Model)
 
 	jsonData, err := json.MarshalIndent(data, "", "   ")
 	if err != nil {

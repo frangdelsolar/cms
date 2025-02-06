@@ -381,8 +381,8 @@ func (b *Builder) InitAuth() error {
 
 	// FIXME: This doesn't look good to me!
 	permissions := RolePermissionMap{
-		AdminRole:   AllAllowedAccess,
-		VisitorRole: AllAllowedAccess,
+		AdminRole:   []CrudOperation{OperationRead, OperationUpdate},
+		VisitorRole: []CrudOperation{OperationRead},
 	}
 
 	userApp, err := admin.Register(&User{}, true, permissions)
@@ -574,7 +574,7 @@ func (b *Builder) RegisterAdminUser() error {
 
 func (b *Builder) InitHistory() error {
 	permissions := RolePermissionMap{
-		AdminRole: AllAllowedAccess,
+		AdminRole: []CrudOperation{OperationRead},
 	}
 
 	_, err := b.Admin.Register(&HistoryEntry{}, false, permissions)
